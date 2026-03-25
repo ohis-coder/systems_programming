@@ -38,4 +38,32 @@ systems_programming/create_account_v2
 ```bash
 gcc -o create_account.c -O2
 ```
+The program will prompt for name, phone number, and address, then store them in the next available slot.Inspecting the DataSince the storage is raw binary, you can inspect it with standard tools:
+
+# View first few names
+```
+hexdump -C names.bin | head -n 20
+```
+# Check current next user ID
+```
+od -An -ti8 id.bin
+```
+Known Limitations & Next Steps 
+- Currently limited to 256 users (hardcoded)
+- No bounds checking — writing beyond 256 will cause memory corruption
+- No concurrent access protection
+- ID allocation is not yet atomic
+- Reading a specific user requires loading entire columns (future optimization planned)
+- File growth logic (auto-expanding when full) is not yet implemented
+
+Lessons LearnedThis version was built without any AI-generated code. The biggest challenges were:Correct pointer arithmetic across multiple mapped regions
+Managing boilerplate for open(), ftruncate(), mmap(), and munmap() on every file
+Understanding how to safely pad fixed-width fields
+
+Future iterations will focus on dynamic resizing, proper error handling, user lookup by ID, and password protection.License
+MIT License
+
+---
+
+
 
