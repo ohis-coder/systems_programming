@@ -17,8 +17,6 @@
 #define PHONE_PAGE_SIZE STRIDE_PHONE *TOTAL_USERS
 #define ADDRESS_PAGE_SIZE STRIDE_ADDR *TOTAL_USERS
 
-int id = 0;
-
 void write_to_db(char *base_pointer, int id, int stride) {
   int c;
   memset(&base_pointer[id * stride], '\0', stride);
@@ -58,14 +56,18 @@ int main() {
     exit(1);
   }
 
-  char *user_name = mmap(NULL, NAME_PAGE_SIZE, PROT_READ | PROT_WRITE,
-                         MAP_SHARED, fd_name, 0);
-  char *user_phone = mmap(NULL, PHONE_PAGE_SIZE, PROT_READ | PROT_WRITE,
-                          MAP_SHARED, fd_phone, 0);
-  char *user_address = mmap(NULL, ADDRESS_PAGE_SIZE, PROT_READ | PROT_WRITE,
-                            MAP_SHARED, fd_address, 0);
-  long *user_id =
+  char *user_name_raw = mmap(NULL, NAME_PAGE_SIZE, PROT_READ | PROT_WRITE,
+                             MAP_SHARED, fd_name, 0);
+  char *user_name = user_name_raw;
+  char *user_phone_raw = mmap(NULL, PHONE_PAGE_SIZE, PROT_READ | PROT_WRITE,
+                              MAP_SHARED, fd_phone, 0);
+  char *user_phone = user_phone_raw + 64;
+  char *user_address_raw = mmap(NULL, ADDRESS_PAGE_SIZE, PROT_READ | PROT_WRITE,
+                                MAP_SHARED, fd_address, 0);
+  char *user_address = user_address_raw + 128;
+  long *user_id_raw =
       mmap(NULL, ID_PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd_id, 0);
+  long *user_id = (long *)((char *)user_id_raw + 192);
 
   if (user_name == MAP_FAILED) {
     perror("mmap");
@@ -83,23 +85,23 @@ int main() {
   long current_id = *user_id;
   printf("Your user id/position is: %ld\n", current_id);
   printf("Enter your name\n");
-  write_to_db(user_name, id, STRIDE_NAME);
+  write_to_db(user_name, current_id, STRIDE_NAME);
   printf("Enter your phone number\n");
-  write_to_db(user_phone, id, STRIDE_NAME);
+  write_to_db(user_phone, current_id, STRIDE_PHONE);
   printf("Enter your address\n");
-  write_to_db(user_address, id, STRIDE_NAME);
+  write_to_db(user_address, current_id, STRIDE_ADDR);
 
   *user_id = current_id + 1;
-  if (munmap(user_name, NAME_PAGE_SIZE) == FAILED) {
+  if (munmap(user_name_raw, NAME_PAGE_SIZE) == FAILED) {
     perror("munmap failed");
   }
-  if (munmap(user_phone, NAME_PAGE_SIZE) == FAILED) {
+  if (munmap(user_phone_raw, PHONE_PAGE_SIZE) == FAILED) {
     perror("munmap failed");
   }
-  if (munmap(user_address, NAME_PAGE_SIZE) == FAILED) {
+  if (munmap(user_address_raw, ADDRESS_PAGE_SIZE) == FAILED) {
     perror("munmap failed");
   }
-  if (munmap(user_id, ID_PAGE_SIZE) == FAILED) {
+  if (munmap(user_id_raw, ID_PAGE_SIZE) == FAILED) {
     perror("munmap failed");
   }
   return 0;
